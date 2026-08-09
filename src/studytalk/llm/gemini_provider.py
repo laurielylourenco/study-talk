@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 class GeminiProvider(LLMProvider):
-    def __init__(self, api_key: str, model: str = "gemini-flash-latest") -> None:
+    def __init__(self, api_key: str, model: str = "gemini-3.5-flash-lite") -> None:
         if not api_key:
             raise ValueError("GEMINI_API_KEY não configurada")
         self._client = genai.Client(api_key=api_key)

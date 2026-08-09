@@ -18,7 +18,7 @@ class Settings(BaseSettings):
 
     llm_provider: str = "gemini"
     gemini_api_key: str = ""
-    gemini_model: str = "gemini-flash-latest"
+    gemini_model: str = "gemini-3.5-flash-lite"
 
     @field_validator("allowed_telegram_ids", mode="before")
     @classmethod
