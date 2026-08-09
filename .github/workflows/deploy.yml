@@ -1,0 +1,51 @@
+name: Deploy Bot to Production
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          envs: TELEGRAM_BOT_TOKEN,GEMINI_API_KEY
+          script: |
+            set -euo pipefail
+
+            APP_DIR="${HOME}/study-talk"
+
+            if [ ! -d "$APP_DIR/.git" ]; then
+              git clone https://github.com/laurielylourenco/study-talk.git "$APP_DIR"
+            fi
+
+            cd "$APP_DIR"
+            git fetch origin main
+            git reset --hard origin/main
+
+            umask 077
+            {
+              echo "TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}"
+              echo "GEMINI_API_KEY=${GEMINI_API_KEY}"
+              echo "LLM_PROVIDER=gemini"
+              echo "GEMINI_MODEL=gemini-flash-latest"
+              echo "DATABASE_URL=sqlite+aiosqlite:///./data/estudobot.db"
+            } > .env
+
+            mkdir -p data
+            docker compose up --build -d
+            docker compose ps
+            docker compose logs --tail=30
