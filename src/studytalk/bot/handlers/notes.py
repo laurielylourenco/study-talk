@@ -1,9 +1,11 @@
 from datetime import datetime, timedelta, timezone
+from html import escape
 from pathlib import Path
 import logging
 import tempfile
 
 from aiogram import F, Router
+from aiogram.exceptions import TelegramBadRequest
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 from sqlalchemy import select
@@ -133,7 +135,7 @@ async def _generate_and_save_summary(
             note.review_interval_days = 1
             await session.commit()
 
-        await callback.message.answer(f"📝 Resumo — {subject_name}\n\n{summary}")
+        await _send_summary(callback, subject_name=subject_name, summary=summary)
 
     except Exception as exc:  # noqa: BLE001 — mensagem amigável ao usuário
         logger.exception("Falha ao gerar resumo (note_id=%s): %s", note_id, exc)
@@ -148,6 +150,21 @@ async def _generate_and_save_summary(
     finally:
         if tmp_path is not None and tmp_path.exists():
             tmp_path.unlink(missing_ok=True)
+
+
+async def _send_summary(
+    callback: CallbackQuery,
+    *,
+    subject_name: str,
+    summary: str,
+) -> None:
+    header = f"📝 Resumo — {escape(subject_name)}"
+    text = f"{header}\n\n{summary}"
+    try:
+        await callback.message.answer(text, parse_mode="HTML")
+    except TelegramBadRequest:
+        logger.warning("Resumo com HTML inválido; reenviando em texto puro")
+        await callback.message.answer(f"📝 Resumo — {subject_name}\n\n{summary}")
 
 
 @router.callback_query(F.data.startswith("link:"))

@@ -59,22 +59,6 @@ async def subject_new(callback: CallbackQuery, state: FSMContext) -> None:
     await callback.message.answer("Qual o nome da matéria?")
 
 
-@router.callback_query(F.data.startswith("subject:view:"))
-async def subject_view(callback: CallbackQuery) -> None:
-    await callback.answer()
-    try:
-        subject_id = int(callback.data.split(":")[-1])
-    except ValueError:
-        await callback.message.answer("Matéria inválida.")
-        return
-
-    async with AsyncSessionLocal() as session:
-        subject = await session.get(Subject, subject_id)
-        if subject is None:
-            await callback.message.answer("Matéria não encontrada.")
-            return
-        await callback.message.answer(f"Matéria: *{subject.name}*", parse_mode="Markdown")
-
 
 @router.message(CreateSubject.waiting_name, F.text)
 async def subject_name_received(message: Message, state: FSMContext) -> None:

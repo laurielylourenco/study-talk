@@ -4,7 +4,7 @@ import logging
 from aiogram import Bot, Dispatcher
 from aiogram.fsm.storage.memory import MemoryStorage
 
-from studytalk.bot.handlers import notes, start, subjects
+from studytalk.bot.handlers import notes, notes_browse, start, subjects
 from studytalk.bot.middlewares import AllowlistMiddleware
 from studytalk.config import settings
 from studytalk.db.session import init_db
@@ -28,6 +28,7 @@ async def main() -> None:
 
     dp.include_router(start.router)
     dp.include_router(subjects.router)
+    dp.include_router(notes_browse.router)
     dp.include_router(notes.router)
 
     if settings.allowed_telegram_ids:
