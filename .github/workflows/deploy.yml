@@ -18,11 +18,12 @@ jobs:
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          ALLOWED_TELEGRAM_IDS: ${{ secrets.ALLOWED_TELEGRAM_IDS }}
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          envs: TELEGRAM_BOT_TOKEN,GEMINI_API_KEY
+          envs: TELEGRAM_BOT_TOKEN,GEMINI_API_KEY,ALLOWED_TELEGRAM_IDS
           script: |
             set -euo pipefail
 
@@ -40,11 +41,14 @@ jobs:
             {
               echo "TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}"
               echo "GEMINI_API_KEY=${GEMINI_API_KEY}"
+              echo "ALLOWED_TELEGRAM_IDS=${ALLOWED_TELEGRAM_IDS:-1695006116}"
+              echo "APP_ENV=production"
               echo "LLM_PROVIDER=gemini"
               echo "GEMINI_MODEL=gemini-flash-latest"
               echo "DATABASE_URL=sqlite+aiosqlite:///./data/estudobot.db"
             } > .env
 
+            # Nunca apagar ./data — SQLite de produção fica no volume
             mkdir -p data
             docker compose up --build -d
             docker compose ps

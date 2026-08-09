@@ -5,22 +5,26 @@ from aiogram.types import CallbackQuery, Message
 
 from studytalk.bot.keyboards import main_menu_kb
 from studytalk.bot.users import get_or_create_user
+from studytalk.config import settings
 from studytalk.db.session import AsyncSessionLocal
 
 router = Router(name="start")
 
-WELCOME = (
-    "Olá! Eu sou o *EstudoBot*.\n\n"
-    "Cadastre suas matérias e envie voice notes explicando o que entendeu. "
-    "Eu guardo tudo organizado por matéria.\n\n"
-    "Escolha uma opção:"
-)
+
+def welcome_text() -> str:
+    badge = settings.env_badge
+    return (
+        f"Olá! Eu sou o EstudoBot. [{badge}]\n\n"
+        "Cadastre suas matérias e envie voice notes explicando o que entendeu. "
+        "Eu guardo tudo organizado por matéria.\n\n"
+        "Escolha uma opção:"
+    )
 
 
 async def send_main_menu(message: Message) -> None:
     async with AsyncSessionLocal() as session:
         await get_or_create_user(session, message.from_user.id)
-    await message.answer(WELCOME, reply_markup=main_menu_kb(), parse_mode="Markdown")
+    await message.answer(welcome_text(), reply_markup=main_menu_kb())
 
 
 @router.message(CommandStart())
@@ -33,8 +37,7 @@ async def cmd_start(message: Message, state: FSMContext) -> None:
 async def menu_send_audio(callback: CallbackQuery) -> None:
     await callback.answer()
     await callback.message.answer(
-        "Envie um *voice note* agora — eu pergunto a qual matéria vincular.",
-        parse_mode="Markdown",
+        "Envie um voice note agora — eu pergunto a qual matéria vincular."
     )
 
 

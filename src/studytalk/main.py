@@ -5,6 +5,7 @@ from aiogram import Bot, Dispatcher
 from aiogram.fsm.storage.memory import MemoryStorage
 
 from studytalk.bot.handlers import notes, start, subjects
+from studytalk.bot.middlewares import AllowlistMiddleware
 from studytalk.config import settings
 from studytalk.db.session import init_db
 
@@ -22,9 +23,19 @@ async def main() -> None:
     bot = Bot(token=settings.telegram_bot_token)
     dp = Dispatcher(storage=MemoryStorage())
 
+    dp.message.middleware(AllowlistMiddleware())
+    dp.callback_query.middleware(AllowlistMiddleware())
+
     dp.include_router(start.router)
     dp.include_router(subjects.router)
     dp.include_router(notes.router)
+
+    if settings.allowed_telegram_ids:
+        logger.info("Allowlist ativa: %s", settings.allowed_telegram_ids)
+    else:
+        logger.warning("Allowlist vazia — bot aceita qualquer usuário")
+
+    logger.info("Ambiente: %s [%s]", settings.app_env, settings.env_badge)
 
     logger.info("Polling started")
     await dp.start_polling(bot)
