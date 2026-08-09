@@ -13,7 +13,10 @@ def main_menu_kb() -> InlineKeyboardMarkup:
             [
                 InlineKeyboardButton(text="📚 Minhas matérias", callback_data="menu:subjects"),
                 InlineKeyboardButton(text="🎙️ Enviar áudio", callback_data="menu:send_audio"),
-            ]
+            ],
+            [
+                InlineKeyboardButton(text="🔁 Revisar", callback_data="menu:review"),
+            ],
         ]
     )
 
@@ -72,4 +75,12 @@ def subjects_list_kb(subjects: list[Subject], *, for_linking: bool = False) -> I
         callback = f"link:{subject.id}" if for_linking else f"subject:view:{subject.id}"
         rows.append([InlineKeyboardButton(text=subject.name, callback_data=callback)])
     rows.append([InlineKeyboardButton(text="+ Nova matéria", callback_data="subject:new")])
+    return InlineKeyboardMarkup(inline_keyboard=rows)
+
+
+def review_feedback_kb(has_more: bool) -> InlineKeyboardMarkup:
+    rows: list[list[InlineKeyboardButton]] = []
+    if has_more:
+        rows.append([InlineKeyboardButton(text="🔁 Continuar revisando", callback_data="menu:review")])
+    rows.append([InlineKeyboardButton(text="🏠 Menu principal", callback_data="menu:home")])
     return InlineKeyboardMarkup(inline_keyboard=rows)

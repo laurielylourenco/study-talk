@@ -18,6 +18,7 @@ class User(Base):
         nullable=False,
         server_default=func.now(),
     )
+    review_notified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     subjects: Mapped[list["Subject"]] = relationship(back_populates="user")
 
@@ -37,6 +38,7 @@ class Subject(Base):
 
     user: Mapped["User"] = relationship(back_populates="subjects")
     lesson_notes: Mapped[list["LessonNote"]] = relationship(back_populates="subject")
+    review_sessions: Mapped[list["ReviewSession"]] = relationship(back_populates="subject")
 
 
 class LessonNote(Base):
@@ -55,22 +57,19 @@ class LessonNote(Base):
     review_interval_days: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
     subject: Mapped["Subject"] = relationship(back_populates="lesson_notes")
-    review_sessions: Mapped[list["ReviewSession"]] = relationship(back_populates="lesson_note")
 
 
 class ReviewSession(Base):
-    """Schema criado na Meta 1; uso a partir da Meta 4."""
+    """Sessão de revisão de uma matéria (cobre todas as notas vencidas dela)."""
 
     __tablename__ = "review_sessions"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    lesson_note_id: Mapped[int] = mapped_column(ForeignKey("lesson_notes.id"), nullable=False)
+    subject_id: Mapped[int] = mapped_column(ForeignKey("subjects.id"), nullable=False)
     question: Mapped[str] = mapped_column(Text, nullable=False)
     user_audio_file_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
     feedback: Mapped[str | None] = mapped_column(Text, nullable=True)
     score: Mapped[int | None] = mapped_column(Integer, nullable=True)
     reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
-    next_review_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
-    interval_days: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
-    lesson_note: Mapped["LessonNote"] = relationship(back_populates="review_sessions")
+    subject: Mapped["Subject"] = relationship(back_populates="review_sessions")

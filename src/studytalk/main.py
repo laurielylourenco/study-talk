@@ -5,9 +5,11 @@ from aiogram import Bot, Dispatcher
 from aiogram.fsm.storage.memory import MemoryStorage
 
 from studytalk.bot.handlers import notes, notes_browse, start, subjects
+from studytalk.bot.handlers import review
 from studytalk.bot.middlewares import AllowlistMiddleware
 from studytalk.config import settings
 from studytalk.db.session import init_db
+from studytalk.scheduler import run_scheduler
 
 logging.basicConfig(
     level=logging.INFO,
@@ -30,6 +32,7 @@ async def main() -> None:
     dp.include_router(subjects.router)
     dp.include_router(notes_browse.router)
     dp.include_router(notes.router)
+    dp.include_router(review.router)
 
     if settings.allowed_telegram_ids:
         logger.info("Allowlist ativa: %s", settings.allowed_telegram_ids)
@@ -39,6 +42,7 @@ async def main() -> None:
     logger.info("Ambiente: %s [%s]", settings.app_env, settings.env_badge)
 
     logger.info("Polling started")
+    asyncio.create_task(run_scheduler(bot))
     await dp.start_polling(bot)
 
 

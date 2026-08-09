@@ -41,6 +41,13 @@ async def menu_send_audio(callback: CallbackQuery) -> None:
     )
 
 
+@router.callback_query(F.data == "menu:home")
+async def menu_home(callback: CallbackQuery, state: FSMContext) -> None:
+    await callback.answer()
+    await state.clear()
+    await send_main_menu(callback.message)
+
+
 @router.message(StateFilter(None), F.text & ~F.text.startswith("/"))
 async def text_outside_flow(message: Message, state: FSMContext) -> None:
     """Texto fora de FSM ativo → menu principal (A9)."""

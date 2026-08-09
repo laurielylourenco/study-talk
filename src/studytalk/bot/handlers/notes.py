@@ -6,12 +6,13 @@ import tempfile
 
 from aiogram import F, Router
 from aiogram.exceptions import TelegramBadRequest
+from aiogram.filters import StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 from sqlalchemy import select
 
 from studytalk.bot.keyboards import new_subject_kb, subjects_list_kb
-from studytalk.bot.states import LinkNote
+from studytalk.bot.states import LinkNote, Review
 from studytalk.bot.users import get_or_create_user
 from studytalk.config import settings
 from studytalk.db.models import LessonNote, Subject
@@ -23,7 +24,7 @@ router = Router(name="notes")
 logger = logging.getLogger(__name__)
 
 
-@router.message(F.voice)
+@router.message(F.voice, ~StateFilter(Review.waiting_answer))
 async def voice_received(message: Message, state: FSMContext) -> None:
     file_id = message.voice.file_id
 
