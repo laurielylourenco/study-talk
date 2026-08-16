@@ -38,6 +38,11 @@ async def _users_with_due_reviews() -> list[tuple[int, int, str]]:
             user.review_notified_at is not None
             and user.review_notified_at >= cooldown_threshold
         ):
+            logger.debug(
+                "Usuário telegram_id=%s pulado (cooldown até %s)",
+                user.telegram_id,
+                (user.review_notified_at + timedelta(hours=NOTIFY_COOLDOWN_HOURS)).isoformat(),
+            )
             continue
 
         async with AsyncSessionLocal() as session:
@@ -71,7 +76,6 @@ async def _mark_notified(user_id: int) -> None:
 async def run_scheduler(bot: Bot) -> None:
     logger.info("Scheduler de revisão iniciado (intervalo: %ds)", CHECK_INTERVAL_SECONDS)
     while True:
-        await asyncio.sleep(CHECK_INTERVAL_SECONDS)
         try:
             due_users = await _users_with_due_reviews()
             for telegram_id, user_id, subject_names in due_users:
@@ -91,3 +95,4 @@ async def run_scheduler(bot: Bot) -> None:
                     logger.warning("Falha ao notificar telegram_id=%s: %s", telegram_id, exc)
         except Exception as exc:
             logger.exception("Erro no scheduler de revisão: %s", exc)
+        await asyncio.sleep(CHECK_INTERVAL_SECONDS)
