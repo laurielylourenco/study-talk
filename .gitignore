@@ -9,3 +9,8 @@ venv/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+tasks/
+
+SPEC_DATA_LAYER.md
+
+/SPEC_REFATORACAO.md

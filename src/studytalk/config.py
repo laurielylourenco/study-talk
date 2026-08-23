@@ -11,14 +11,20 @@ class Settings(BaseSettings):
 
     telegram_bot_token: str
     database_url: str = "sqlite+aiosqlite:///./data/estudobot.db"
-    app_env: str = "development"  # development | production
+    app_env: str = "development"
 
-    # Lista de telegram_id permitidos (vírgula). Vazio = libera todos (só local/dev).
     allowed_telegram_ids: list[int] = []
 
     llm_provider: str = "gemini"
     gemini_api_key: str = ""
     gemini_model: str = "gemini-3.5-flash-lite"
+
+    # Modelos especializados por papel (free tier Google AI Studio)
+    gemini_model_multimodal: str = "gemini-3.5-flash-lite"  # P1, P6 — 500 RPD
+    gemini_model_text_fast: str = "gemini-3.1-flash-lite"  # P2, P3 — 500 RPD
+    gemini_model_summary: str = "gemini-3.5-flash-lite"  # P4 — 500 RPD
+    gemini_model_questions: str = "gemini-3.7-flash"  # P5 — 20 RPD
+    gemini_model_reasoning: str = "gemini-3.5-flash"  # P7 — 20 RPD
 
     @field_validator("allowed_telegram_ids", mode="before")
     @classmethod
