@@ -33,7 +33,7 @@ async def cmd_start(message: Message, state: FSMContext) -> None:
     await send_main_menu(message)
 
 
-@router.callback_query(F.data == "menu:send_audio")
+@router.callback_query(F.data == "menu:audio")
 async def menu_send_audio(callback: CallbackQuery) -> None:
     await callback.answer()
     await callback.message.answer(
