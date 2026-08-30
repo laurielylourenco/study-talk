@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy import (
     BigInteger,
@@ -12,10 +12,36 @@ from sqlalchemy import (
     SmallInteger,
     String,
     Text,
+    TypeDecorator,
     UniqueConstraint,
     func,
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+
+
+class UtcDateTime(TypeDecorator):
+    """Datetime sempre UTC-aware na leitura.
+
+    SQLite não armazena offset, então DateTime(timezone=True) devolve valores
+    naive e qualquer comparação com datetime.now(timezone.utc) levanta
+    TypeError. O formato gravado é o mesmo de antes (UTC sem offset), então
+    linhas antigas continuam válidas.
+    """
+
+    impl = DateTime(timezone=True)
+    cache_ok = True
+
+    def process_bind_param(self, value: datetime | None, dialect) -> datetime | None:
+        if value is None or value.tzinfo is None:
+            return value
+        return value.astimezone(timezone.utc).replace(tzinfo=None)
+
+    def process_result_value(self, value: datetime | None, dialect) -> datetime | None:
+        if value is None:
+            return None
+        if value.tzinfo is None:
+            return value.replace(tzinfo=timezone.utc)
+        return value.astimezone(timezone.utc)
 
 
 class Base(DeclarativeBase):
@@ -28,10 +54,10 @@ class User(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     telegram_id: Mapped[int] = mapped_column(BigInteger, unique=True, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, server_default=func.now()
+        UtcDateTime, nullable=False, server_default=func.now()
     )
     review_notified_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True
+        UtcDateTime, nullable=True
     )
 
     subjects: Mapped[list["Subject"]] = relationship(back_populates="user")
@@ -45,7 +71,7 @@ class Subject(Base):
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
     name: Mapped[str] = mapped_column(String(120), nullable=False)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, server_default=func.now()
+        UtcDateTime, nullable=False, server_default=func.now()
     )
 
     user: Mapped["User"] = relationship(back_populates="subjects")
@@ -71,9 +97,9 @@ class LessonNote(Base):
     user_audio_file_id: Mapped[str] = mapped_column(String(255), nullable=False)
     improved_summary: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, server_default=func.now()
+        UtcDateTime, nullable=False, server_default=func.now()
     )
-    next_review_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    next_review_at: Mapped[datetime | None] = mapped_column(UtcDateTime, nullable=True)
     review_interval_days: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
     # Novos campos
@@ -99,11 +125,11 @@ class SubjectKnowledge(Base):
     )
     knowledge_map: Mapped[str] = mapped_column(Text, nullable=False, default="{}")
     last_updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, server_default=func.now()
+        UtcDateTime, nullable=False, server_default=func.now()
     )
     last_lesson_number: Mapped[int | None] = mapped_column(Integer, nullable=True)
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
+        UtcDateTime,
         nullable=False,
         server_default=func.now(),
         onupdate=func.now(),
@@ -144,11 +170,11 @@ class Question(Base):
     target_concept: Mapped[str] = mapped_column(String(255), nullable=False)
     answer_criteria: Mapped[str] = mapped_column(Text, nullable=False, default="{}")
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, server_default=func.now()
+        UtcDateTime, nullable=False, server_default=func.now()
     )
     times_asked: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     times_correct: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
-    last_asked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    last_asked_at: Mapped[datetime | None] = mapped_column(UtcDateTime, nullable=True)
 
     subject: Mapped["Subject"] = relationship(back_populates="questions")
     lesson_note: Mapped["LessonNote"] = relationship(back_populates="questions")
@@ -173,7 +199,7 @@ class ReviewSession(Base):
     user_audio_file_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
     feedback: Mapped[str | None] = mapped_column(Text, nullable=True)
     score: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    reviewed_at: Mapped[datetime | None] = mapped_column(UtcDateTime, nullable=True)
     criteria_evaluation: Mapped[str | None] = mapped_column(Text, nullable=True)
     identified_gaps: Mapped[str | None] = mapped_column(Text, nullable=True)
     next_action_taken: Mapped[str | None] = mapped_column(String(50), nullable=True)

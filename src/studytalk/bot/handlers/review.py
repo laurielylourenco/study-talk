@@ -53,6 +53,11 @@ async def start_review(callback: CallbackQuery, state: FSMContext) -> None:
         await callback.message.answer("Nenhuma revisão pendente.", reply_markup=main_menu_kb())
         return
 
+    await callback.message.answer(
+        f"⏳ Preparando sua revisão de <b>{escape(subject_name)}</b>…",
+        parse_mode="HTML",
+    )
+
     async with AsyncSessionLocal() as session:
         rs = ReviewSession(subject_id=subject_id, history_json="[]")
         session.add(rs)
