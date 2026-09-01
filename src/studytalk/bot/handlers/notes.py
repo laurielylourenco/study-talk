@@ -17,7 +17,7 @@ from aiogram.types import CallbackQuery, Message
 from sqlalchemy import func as sa_func, select
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 
-from studytalk.bot.keyboards import new_subject_kb, subjects_list_kb, review_in_session_kb
+from studytalk.bot.keyboards import new_subject_kb, subjects_list_kb
 from studytalk.bot.states import LinkNote, Review
 from studytalk.bot.users import get_or_create_user
 from studytalk.config import settings
@@ -38,22 +38,12 @@ _VALID_DIFFICULTIES = frozenset({"fácil", "médio", "difícil"})
 
 # ─── Handlers públicos ────────────────────────────────────────────────────────
 
-@router.message(F.voice, StateFilter(Review.waiting_answer))
-async def voice_during_review(message: Message, state: FSMContext) -> None:
-    """Usuário enviou áudio durante revisão ativa — explica a situação."""
-    data = await state.get_data()
-    question_text = data.get("current_question_text", "")
-    await message.answer(
-        "📖 Você está em uma sessão de revisão ativa.\n\n"
-        "Este áudio será tratado como resposta à pergunta atual:\n"
-        f"<i>{escape(question_text)}</i>\n\n"
-        "Para encerrar a revisão e salvar um novo áudio de aula, "
-        "clique em 🛑 <b>Encerrar revisão</b> primeiro.",
-        parse_mode="HTML",
-        reply_markup=review_in_session_kb(),
-    )
-
-
+# Voice notes durante Review.waiting_answer são tratados por
+# `review.receive_review_answer` (registrado depois deste router em main.py).
+# Este router só deve capturar áudios de aula, por isso o filtro abaixo
+# exclui explicitamente o estado de revisão — sem essa exclusão, este
+# handler intercepta a resposta antes do router de revisão e ela nunca
+# chega a ser avaliada.
 @router.message(F.voice, ~StateFilter(Review.waiting_answer))
 async def voice_received(message: Message, state: FSMContext) -> None:
     file_id = message.voice.file_id
